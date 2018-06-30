@@ -2,6 +2,8 @@ package net.qaul.wifidirectdeluxe;
 
 import android.content.Context;
 import android.content.IntentFilter;
+import android.net.wifi.WpsInfo;
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
@@ -15,6 +17,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
     private WifiP2pManager.Channel mChannel;
     private WifiP2pManager mManager;
     private WiFiDirectBroadcastReceiver receiver;
-    private List<WifiP2pDevice> peers = new ArrayList<WifiP2pDevice>();
+    private List<WifiP2pDevice> peers = new ArrayList<>();
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -155,4 +158,28 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
+    @Override
+    public void connect() {
+        // Picking the first device found on the network.
+        WifiP2pDevice device = peers.get(0);
+
+        WifiP2pConfig config = new WifiP2pConfig();
+        config.deviceAddress = device.deviceAddress;
+        config.wps.setup = WpsInfo.PBC;
+
+        mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+
+            @Override
+            public void onSuccess() {
+                // WiFiDirectBroadcastReceiver notifies us. Ignore for now.
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                Toast.makeText(MainActivity.this, "Connect failed. Retry.",
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 }
