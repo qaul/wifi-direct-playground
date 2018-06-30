@@ -25,10 +25,12 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     public static final String TAG = "WifiDirectActivity";
     private final IntentFilter intentFilter = new IntentFilter();
+
     private WifiP2pManager.Channel mChannel;
     private WifiP2pManager mManager;
     private WiFiDirectBroadcastReceiver receiver;
     private List<WifiP2pDevice> peers = new ArrayList<>();
+    private boolean isWifiP2pEnabled = false;
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -55,21 +57,39 @@ public class MainActivity extends AppCompatActivity {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
 
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
+
             }
         });
 
         // Example of a call to a native method
-        TextView tv = (TextView) findViewById(R.id.sample_text);
+        TextView tv = findViewById(R.id.sample_text);
         tv.setText("Hello World");
 
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
+
+        mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
+
+            @Override
+            public void onSuccess() {
+                // Code for when the discovery initiation is successful goes here.
+                // No services have actually been discovered yet, so this method
+                // can often be left blank. Code for peer discovery goes in the
+                // onReceive method, detailed below.
+            }
+
+            @Override
+            public void onFailure(int reasonCode) {
+                // Code for when the discovery initiation fails goes here.
+                // Alert the user that something went wrong.
+            }
+        });
     }
 
     @Override
@@ -100,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-        receiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this);
+        receiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this, peerListListener);
         registerReceiver(receiver, intentFilter);
     }
 
@@ -111,26 +131,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setIsWifiP2pEnabled(boolean yes) {
-
-    }
-
-    public void searchDevices() {
-        mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
-
-            @Override
-            public void onSuccess() {
-                // Code for when the discovery initiation is successful goes here.
-                // No services have actually been discovered yet, so this method
-                // can often be left blank. Code for peer discovery goes in the
-                // onReceive method, detailed below.
-            }
-
-            @Override
-            public void onFailure(int reasonCode) {
-                // Code for when the discovery initiation fails goes here.
-                // Alert the user that something went wrong.
-            }
-        });
+        this.isWifiP2pEnabled = yes;
     }
 
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
@@ -159,7 +160,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    @Override
     public void connect() {
         // Picking the first device found on the network.
         WifiP2pDevice device = peers.get(0);

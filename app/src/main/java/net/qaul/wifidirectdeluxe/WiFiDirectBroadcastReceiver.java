@@ -10,14 +10,19 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 
 public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
-    private WifiP2pManager woman;
-    private WifiP2pManager.Channel channel;
+    private WifiP2pManager mManager;
+    private WifiP2pManager.Channel mChannel;
     private MainActivity activity;
+    private WifiP2pManager.PeerListListener listener;
 
-    public WiFiDirectBroadcastReceiver(WifiP2pManager woman, WifiP2pManager.Channel channel, MainActivity activity) {
-        this.woman = woman;
-        this.channel = channel;
+    public WiFiDirectBroadcastReceiver(WifiP2pManager m,
+                                       WifiP2pManager.Channel c,
+                                       MainActivity activity,
+                                       WifiP2pManager.PeerListListener listener) {
+        this.mManager = m;
+        this.mChannel = c;
         this.activity = activity;
+        this.listener = listener;
     }
 
     @Override
@@ -34,16 +39,19 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
             }
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
 
-            // The peer list has changed! We should probably do something about
-            // that.
+            if (mManager != null) {
+                mManager.requestPeers(mChannel, listener);
+            }
+            Log.d(MainActivity.TAG, "P2P peers changed");
+
 
         } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
 
             // Request available peers from the wifi p2p manager. This is an
             // asynchronous call and the calling activity is notified with a
             // callback on PeerListListener.onPeersAvailable()
-            if (woman != null) {
-                woman.requestPeers(channel, null /* peer list listener */);
+            if (mManager != null) {
+                mManager.requestPeers(mChannel, null /* peer list listener */);
             }
             Log.d(MainActivity.TAG, "P2P peers changed");
 
